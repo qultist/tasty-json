@@ -53,7 +53,7 @@ named!(number<CompleteStr, Result<i32,ParseIntError>>,
 named!(pair<&str, (&str, Value)>,
     separated_pair!(
         string,
-        char!(':'),
+        ws!(char!(':')),
         json_value
     )
 );
@@ -82,7 +82,7 @@ fn parse_number() {
 
 #[test]
 fn parse_string_pair() {
-    let pair_string = "\"manufacturer\":\"BMW\"";
+    let pair_string = "\"manufacturer\": \"BMW\"";
     let pair_test = pair(pair_string);
     assert_eq!(pair_test, Ok(("", ("manufacturer", Value::String(String::from("BMW"))))))
 }
