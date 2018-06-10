@@ -8,6 +8,8 @@ use nom::*;
 use nom::types::CompleteStr;
 use std::str::FromStr;
 use std::num::ParseIntError;
+use std::collections::HashMap;
+use std::iter::FromIterator;
 
 #[derive(Debug, PartialEq)]
 enum Value {
@@ -50,18 +52,21 @@ named!(number<CompleteStr, Result<i32,ParseIntError>>,
     map!(digit, |s: CompleteStr| { FromStr::from_str(s.0) })
 );
 
-named!(pair<&str, (&str, Value)>,
+named!(pair<&str, (String, Value)>,
     separated_pair!(
-        string,
+        map!(string, |s: &str| { s.to_owned() }),
         ws!(char!(':')),
         json_value
     )
 );
 
-named!(object<&str, Vec<(&str,Value)>>,
-    separated_list_complete!(
-        ws!(char!(',')),
-        pair
+named!(object<&str, HashMap<String, Value>>,
+    map!(
+        separated_list_complete!(
+            ws!(char!(',')),
+            pair
+        ),
+        |vec: Vec<(String, Value)>| { HashMap::from_iter(vec.into_iter()) }
     )
 );
 
@@ -91,7 +96,7 @@ fn parse_number() {
 fn parse_string_pair() {
     let pair_string = "\"manufacturer\": \"BMW\"";
     let pair_test = pair(pair_string);
-    assert_eq!(pair_test, Ok(("", ("manufacturer", Value::String(String::from("BMW"))))))
+    assert_eq!(pair_test, Ok(("", ("manufacturer".to_owned(), Value::String(String::from("BMW"))))))
 }
 
 #[test]
@@ -110,10 +115,15 @@ fn parse_value() {
 fn parse_object() {
     let object_string = "\"manufacturer\": \"BMW\",\"model\": \"1 Series\", \"hatchback\": True";
     let object_test = object(object_string);
-    assert_eq!(object_test, Ok(("", vec!(
-        ("manufacturer", Value::String("BMW".to_string())),
-        ("model", Value::String("1 Series".to_string())),
-        ("hatchback", Value::True)))))
+
+    let vec = vec![
+        ("manufacturer".to_string(), Value::String("BMW".to_string())),
+        ("model".to_string(), Value::String("1 Series".to_string())),
+        ("hatchback".to_string(), Value::True)
+    ];
+
+    let map: HashMap<String, Value> = HashMap::from_iter(vec.into_iter());
+    assert_eq!(object_test, Ok(("", map)))
 }
 
 fn main() {
