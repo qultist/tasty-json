@@ -58,6 +58,13 @@ named!(pair<&str, (&str, Value)>,
     )
 );
 
+named!(object<&str, Vec<(&str,Value)>>,
+    separated_list_complete!(
+        ws!(char!(',')),
+        pair
+    )
+);
+
 fn read_json_file(path: &String) -> String {
     println!("{}", path);
     let mut f = File::open(path).expect("File not found");
@@ -97,6 +104,16 @@ fn parse_literal_true() {
 fn parse_value() {
     let value_test = json_value("Null");
     assert_eq!(value_test, Ok(("", Value::Null)))
+}
+
+#[test]
+fn parse_object() {
+    let object_string = "\"manufacturer\": \"BMW\",\"model\": \"1 Series\", \"hatchback\": True";
+    let object_test = object(object_string);
+    assert_eq!(object_test, Ok(("", vec!(
+        ("manufacturer", Value::String("BMW".to_string())),
+        ("model", Value::String("1 Series".to_string())),
+        ("hatchback", Value::True)))))
 }
 
 fn main() {
