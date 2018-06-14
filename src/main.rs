@@ -28,15 +28,15 @@ named!(string<&str, &str>,
 );
 
 named!(literal_true<&str, Value>,
-    value!(Value::True, tag!("True"))
+    value!(Value::True, tag!("true"))
 );
 
 named!(literal_false<&str, Value>,
-    value!(Value::False, tag!("False"))
+    value!(Value::False, tag!("false"))
 );
 
 named!(literal_null<&str, Value>,
-    value!(Value::Null, tag!("Null"))
+    value!(Value::Null, tag!("null"))
 );
 
 named!(json_value<&str, Value>,
@@ -101,19 +101,19 @@ fn parse_string_pair() {
 
 #[test]
 fn parse_literal_true() {
-    let literal_test = literal_true("True");
+    let literal_test = literal_true("true");
     assert_eq!(literal_test, Ok(("", Value::True)))
 }
 
 #[test]
 fn parse_value() {
-    let value_test = json_value("Null");
+    let value_test = json_value("null");
     assert_eq!(value_test, Ok(("", Value::Null)))
 }
 
 #[test]
 fn parse_object() {
-    let object_string = "\"manufacturer\": \"BMW\",\"model\": \"1 Series\", \"hatchback\": True";
+    let object_string = "\"manufacturer\": \"BMW\",\"model\": \"1 Series\", \"hatchback\": true";
     let object_test = object(object_string);
 
     let vec = vec![
