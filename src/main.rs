@@ -14,6 +14,8 @@ use std::iter::FromIterator;
 #[derive(Debug, PartialEq)]
 enum Value {
     String(String),
+    Object(HashMap<String, Value>),
+    Array(Vec<Value>),
     True,
     False,
     Null
@@ -45,6 +47,8 @@ named!(literal_null<CompleteStr, Value>,
 named!(json_value<CompleteStr, Value>,
     alt!(
         string => { |s: CompleteStr| Value::String(s.to_string()) }
+        | object => { |m| Value::Object(m) }
+        | array
         | literal_true
         | literal_false
         | literal_null
@@ -60,6 +64,20 @@ named!(pair<CompleteStr, (String, Value)>,
         map!(string, |s: CompleteStr| { s.to_string() }),
         ws!(char!(':')),
         json_value
+    )
+);
+
+named!(array<CompleteStr, Value>,
+    map!(
+        delimited!(
+            ws!(char!('[')),
+            separated_list!(
+                ws!(char!(',')),
+                json_value
+            ),
+            ws!(char!(']'))
+        ),
+        |vec| { Value::Array(vec) }
     )
 );
 
@@ -114,8 +132,14 @@ fn parse_literal_true() {
 
 #[test]
 fn parse_value() {
-    let value_test = literal_null(CompleteStr("null"));
+    let value_test = json_value(CompleteStr("null"));
     assert_eq!(value_test, Ok((CompleteStr(""), Value::Null)))
+}
+
+#[test]
+fn parse_array() {
+    let array_test = array(CompleteStr("[\"BMW\", \"Jaguar\"]"));
+    assert_eq!(array_test, Ok((CompleteStr(""), Value::Array(vec![Value::String(String::from("BMW")), Value::String(String::from("Jaguar"))]))))
 }
 
 #[test]
@@ -141,5 +165,10 @@ fn main() {
     }
 
     let json_string = read_json_file(&args[1]);
-    println!("{}", json_string)
+    println!("{}", json_string);
+
+    let result = object(CompleteStr(&json_string));
+    let json = result;
+
+    println!("{:?}", json)
 }
