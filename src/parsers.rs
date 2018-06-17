@@ -23,6 +23,10 @@ named!(literal_null<CompleteStr, Value>,
     value!(Value::Null, tag!("null"))
 );
 
+named!(number<CompleteStr, CompleteStr>,
+    re_find!(r"(0|-?[1-9]+)(\.\d+)?((e|E)(\+|-)?\d*)?")
+);
+
 named!(json_value<CompleteStr, Value>,
     alt!(
         string => { |s: CompleteStr| Value::String(s.to_string()) }
@@ -31,6 +35,7 @@ named!(json_value<CompleteStr, Value>,
         | literal_true
         | literal_false
         | literal_null
+        | number => { |n: CompleteStr| Value::Number(n.to_string()) }
     )
 );
 
@@ -102,6 +107,11 @@ mod tests {
     }
 
     #[test]
+    fn parse_number() {
+        assert_eq!(number(CompleteStr("-42.24e+10")), Ok((CompleteStr(""), CompleteStr("-42.24e+10"))));
+    }
+
+    #[test]
     fn parse_array() {
         let array_test = array(CompleteStr("[\"BMW\", \"Jaguar\"]"));
         assert_eq!(array_test, Ok((CompleteStr(""), Value::Array(vec![Value::String(String::from("BMW")),
@@ -110,13 +120,15 @@ mod tests {
 
     #[test]
     fn parse_object() {
-        let object_string = "{ \"manufacturer\": \"BMW\", \"model\": \"1 Series\", \"hatchback\": true }";
+        let object_string =
+            "{ \"manufacturer\": \"BMW\", \"model\": \"1 Series\", \"hatchback\": true, \"hp\": 143 }";
         let object_test = object(CompleteStr(object_string));
 
         let vec = vec![
             ("manufacturer".to_string(), Value::String("BMW".to_string())),
             ("model".to_string(), Value::String("1 Series".to_string())),
-            ("hatchback".to_string(), Value::True)
+            ("hatchback".to_string(), Value::True),
+            ("hp".to_string(), Value::Number("143".to_string()))
         ];
 
         let map: HashMap<String, Value> = HashMap::from_iter(vec.into_iter());
