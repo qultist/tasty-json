@@ -1,14 +1,20 @@
 use nom::types::CompleteStr;
+use nom::Needed;
 use json::Value;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
-named!(string<CompleteStr, CompleteStr>,
-    delimited!(
-        char!('\"'),
-        take_until!("\""),
-        char!('\"')
-    )
+named!(string<CompleteStr, String>,
+        delimited!(
+            tag!("\""),
+            escaped_transform!(
+                none_of!("\\\""),
+                '\\',
+                alt!(
+                    tag!("\\") => { |_| "\\" }
+                  | tag!("\"") => { |_| "\"" }
+                )),
+            tag!("\""))
 );
 
 named!(literal_true<CompleteStr, Value>,
@@ -29,8 +35,8 @@ named!(number<CompleteStr, CompleteStr>,
 
 named!(json_value<CompleteStr, Value>,
     alt!(
-        string => { |s: CompleteStr| Value::String(s.to_string()) }
-        | object => { |m| Value::Object(m) }
+        string => { Value::String }
+        | object => { Value::Object }
         | array
         | literal_true
         | literal_false
@@ -41,7 +47,7 @@ named!(json_value<CompleteStr, Value>,
 
 named!(pair<CompleteStr, (String, Value)>,
     separated_pair!(
-        map!(string, |s: CompleteStr| { s.to_string() }),
+        string,
         ws!(char!(':')),
         json_value
     )
@@ -61,7 +67,7 @@ named!(array<CompleteStr, Value>,
     )
 );
 
-named!(object<CompleteStr, HashMap<String, Value>>,
+named!(pub object<CompleteStr, HashMap<String, Value>>,
     map!(
         delimited!(
             ws!(char!('{')),
@@ -83,7 +89,7 @@ mod tests {
     #[test]
     fn parse_string() {
         let string_test = string(CompleteStr("\"Hallo Welt!\""));
-        assert_eq!(string_test, Ok((CompleteStr(""), CompleteStr("Hallo Welt!"))))
+        assert_eq!(string_test, Ok((CompleteStr(""), String::from("Hallo Welt!"))))
     }
 
     #[test]
