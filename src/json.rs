@@ -6,7 +6,6 @@ pub enum Value {
     Number(String),
     Object(HashMap<String, Value>),
     Array(Vec<Value>),
-    True,
-    False,
+    Bool(bool),
     Null
 }

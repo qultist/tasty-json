@@ -18,11 +18,11 @@ named!(string<CompleteStr, String>,
 );
 
 named!(literal_true<CompleteStr, Value>,
-    value!(Value::True, tag!("true"))
+    value!(Value::Bool(true), tag!("true"))
 );
 
 named!(literal_false<CompleteStr, Value>,
-    value!(Value::False, tag!("false"))
+    value!(Value::Bool(false), tag!("false"))
 );
 
 named!(literal_null<CompleteStr, Value>,
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn parse_literal_true() {
         let literal_test = literal_true(CompleteStr("true"));
-        assert_eq!(literal_test, Ok((CompleteStr(""), Value::True)))
+        assert_eq!(literal_test, Ok((CompleteStr(""), Value::Bool(true))))
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
         let vec = vec![
             ("manufacturer".to_string(), Value::String("BMW".to_string())),
             ("model".to_string(), Value::String("1 Series".to_string())),
-            ("hatchback".to_string(), Value::True),
+            ("hatchback".to_string(), Value::Bool(true)),
             ("hp".to_string(), Value::Number("143".to_string()))
         ];
 
