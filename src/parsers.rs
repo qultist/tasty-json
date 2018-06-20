@@ -29,8 +29,11 @@ named!(literal_null<CompleteStr, Value>,
     value!(Value::Null, tag!("null"))
 );
 
-named!(number<CompleteStr, CompleteStr>,
-    re_find!(r"(0|-?[1-9]+)(\.\d+)?((e|E)(\+|-)?\d*)?")
+named!(number<CompleteStr, f64>,
+    map!(
+        re_find!(r"(0|-?[1-9]+)(\.\d+)?((e|E)(\+|-)?\d*)?"),
+        |s: CompleteStr| { s.parse::<f64>().unwrap() }
+    )
 );
 
 named!(json_value<CompleteStr, Value>,
@@ -41,7 +44,7 @@ named!(json_value<CompleteStr, Value>,
         | literal_true
         | literal_false
         | literal_null
-        | number => { |n: CompleteStr| Value::Number(n.to_string()) }
+        | number => { Value::Number }
     )
 );
 
@@ -114,7 +117,7 @@ mod tests {
 
     #[test]
     fn parse_number() {
-        assert_eq!(number(CompleteStr("-42.24e+10")), Ok((CompleteStr(""), CompleteStr("-42.24e+10"))));
+        assert_eq!(number(CompleteStr("-42.24e+10")), Ok((CompleteStr(""), -42.24e+10)));
     }
 
     #[test]
@@ -134,7 +137,7 @@ mod tests {
             ("manufacturer".to_string(), Value::String("BMW".to_string())),
             ("model".to_string(), Value::String("1 Series".to_string())),
             ("hatchback".to_string(), Value::Bool(true)),
-            ("hp".to_string(), Value::Number("143".to_string()))
+            ("hp".to_string(), Value::Number(143.0))
         ];
 
         let map: HashMap<String, Value> = HashMap::from_iter(vec.into_iter());
